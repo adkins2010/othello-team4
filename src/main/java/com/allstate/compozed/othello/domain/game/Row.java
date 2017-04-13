@@ -3,6 +3,7 @@ package com.allstate.compozed.othello.domain.game;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 
 import com.allstate.compozed.othello.domain.user.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -29,13 +30,15 @@ public class Row {
     private GameBoard gameBoard = new GameBoard();
 
     @JsonProperty("row")
-    private String row;
+    @ElementCollection(targetClass=String.class)
+    private List<String> row = new ArrayList<>();
 
-    public void setRow(String row) {
-        this.row = row;
+    public void setRow(){
+      for (int i =0; i < 8; i++)
+        this.row.add("X");
     }
 
-    public String getRow() {
+    public List<String> getRow() {
         return row;
     }
 

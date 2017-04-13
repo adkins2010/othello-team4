@@ -30,6 +30,8 @@ public class OthelloController {
 
     GameBoardRepository gameBoardRepository;
 
+    RowRepository rowRepository;
+
     @Autowired
     public OthelloController(UserRepository userRepository, GameBoardRepository gameBoardRepository, RowRepository rowRepository) {
         this.userRepository = userRepository;
@@ -111,10 +113,10 @@ public class OthelloController {
     @PutMapping("/games/{id}/")
     public ResponseEntity<GameBoard> saveGameBoard(@RequestBody GameBoard gameBoard, @PathVariable Long id) {
         GameBoard oldGameBoard = gameBoardRepository.findOne(id);
-        for (Row row : gameBoard.getRowList()) {
+        for (Row row : gameBoard.getRows()) {
             row.setGameBoard(oldGameBoard);
         }
-        oldGameBoard.setRowList(gameBoard.getRowList());
+        oldGameBoard.setRows(gameBoard.getRows());
         return new ResponseEntity<>(gameBoardRepository.save(oldGameBoard), HttpStatus.OK);
     }
 
@@ -147,9 +149,9 @@ public class OthelloController {
 
         Row row = new Row();
         for (int i = 0; i < 8; i++) {
-            row.setRow("X,X,X,X,X,X,X,X");
+            row.setRow();
             row.setGameBoard(gameBoard);
-            gameBoard.getRowList().add(row);
+            gameBoard.getRows().add(row);
             row = new Row();
         }
 

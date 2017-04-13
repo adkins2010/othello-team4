@@ -18,14 +18,20 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import javax.transaction.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.core.IsEqual.*;
+import static org.hamcrest.collection.IsIterableContainingInOrder.*;
+import static org.junit.Assert.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -37,7 +43,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 public class OthelloControllerTest {
-
 
     @Autowired
     UserRepository userRepository;
@@ -86,20 +91,19 @@ public class OthelloControllerTest {
                 .andExpect(status().isOk());
 
         assertEquals(1, this.userRepository.findAll().spliterator().getExactSizeIfKnown());
-
     }
 
-    @Test
-    @Transactional
-    @Rollback
-    public void testRecoverPasswordSuccessful() throws Exception {
-        userRepository.save(user);
-        MockHttpServletRequestBuilder request = post("/users/recover/").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"emailAddress\": \"zquinn@allstate.com\"}");
-
-        this.mockMvc.perform(request)
-                .andExpect(status().is2xxSuccessful());
-    }
+    // @Test
+    // @Transactional
+    // @Rollback
+    // public void testRecoverPasswordSuccessful() throws Exception {
+    //     userRepository.save(user);
+    //     MockHttpServletRequestBuilder request = post("/users/recover/").contentType(MediaType.APPLICATION_JSON)
+    //             .content("{\"emailAddress\": \"zquinn@allstate.com\"}");
+    //
+    //     this.mockMvc.perform(request)
+    //             .andExpect(status().is2xxSuccessful());
+    // }
 
     @Test
     @Transactional
@@ -139,8 +143,6 @@ public class OthelloControllerTest {
     }
 
     @Test
-    @Transactional
-    @Rollback
     public void testSaveGameBoard() throws Exception {
         userRepository.save(user);
 
@@ -149,68 +151,63 @@ public class OthelloControllerTest {
         gameBoard.setUser(user);
 
         Row row = new Row();
-
+        JSONArray expectedRowsArray = new JSONArray();
+        JSONObject expectedRowObj = new JSONObject();
+        JSONArray expectedInitRowArray = new JSONArray();
+        JSONArray expectedRowArray = new JSONArray();
+        for (int i =0;i<8;i++){
+          expectedInitRowArray.put("X");
+        }
+        expectedRowArray.put("X");
+        expectedRowArray.put("X");
+        expectedRowArray.put("Larry");
+        expectedRowArray.put("X");
+        expectedRowArray.put("Zach");
+        expectedRowArray.put("X");
+        expectedRowArray.put("X");
+        expectedRowArray.put("X");
         for (int i =0;i<8;i++)
         {
-            row.setRow("X,X,X,X,X,X,X,X");
+            row.setRow();
             row.setGameBoard(gameBoard);
-            gameBoard.getRowList().add(row);
+            gameBoard.getRows().add(row);
+
+            if (i == 3) {
+              expectedRowObj.put("row", expectedRowArray);
+            } else {
+              expectedRowObj.put("row",expectedInitRowArray);
+            }
+            expectedRowObj.put("id", i+20);
+            expectedRowsArray.put(expectedRowObj);
 
             row = new Row();
+            expectedRowObj = new JSONObject();
+
         }
 
-
+        JSONObject expected = new JSONObject();
+        expected.put("rows", expectedRowsArray);
+        expected.put("id", 1L);
 
         gameBoardRepository.save(gameBoard);
 
+        System.out.println("=============================================");
+        System.out.println(expected.toString());
+        System.out.println("=============================================");
         MockHttpServletRequestBuilder request = put("/games/" + gameBoard.getId() + "/").contentType(MediaType.APPLICATION_JSON)
-                .content("{" +
-                        "  \"rows\": [" +
-                        "    {" +
-                        "      \"row\": \"X,X,X,X,X,X,X,X\"," +
-                        "      \"id\": 28" +
-                        "    }," +
-                        "    {" +
-                        "      \"row\": \"X,X,X,X,X,X,X,X\"," +
-                        "      \"id\": 29" +
-                        "    }," +
-                        "    {" +
-                        "      \"row\": \"X,X,X,X,X,X,X,X\"," +
-                        "      \"id\": 30" +
-                        "    }," +
-                        "    {" +
-                        "      \"row\": \"X,X,LARRY,X,ZACH,X,X,X\"," +
-                        "      \"id\": 31" +
-                        "    }," +
-                        "    {" +
-                        "      \"row\": \"X,X,X,X,X,X,X,X\"," +
-                        "      \"id\": 32" +
-                        "    }," +
-                        "    {" +
-                        "      \"row\": \"X,X,X,X,X,X,X,X\"," +
-                        "      \"id\": 33" +
-                        "    }," +
-                        "    {" +
-                        "      \"row\": \"X,X,X,X,X,X,X,X\"," +
-                        "      \"id\": 34" +
-                        "    }," +
-                        "    {" +
-                        "      \"row\": \"X,X,X,X,X,X,X,X\"," +
-                        "      \"id\": 35" +
-                        "    }" +
-                        "  ]," +
-                        "  \"id\": 7" +
-                        "}");
+                  .content(expected.toString());
 
         this.mockMvc.perform(request)
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.rows[3].row", equalTo("X,X,LARRY,X,ZACH,X,X,X")));
+                .andExpect(jsonPath("$.rows[3].row", contains("X","X","Larry","X","Zach","X","X","X")))
+                .andExpect(jsonPath("$.rows[7].row", contains("X","X","X","X","X","X","X","X")))
+                .andExpect(jsonPath("$.id", equalTo(expected.getInt("id"))));
+                // .andExpect(assertArrayEquals(jsonPath("$.rows[3].row","VALUE"),
+                //   expected.getJSONArray("rows").getJSONObject(3).getJSONArray("row")));
 
     }
 
     @Test
-    @Transactional
-    @Rollback
     public void testGetGameBoard() throws Exception {
 
         userRepository.save(user);
@@ -222,9 +219,9 @@ public class OthelloControllerTest {
 
         for (int i =0;i<8;i++)
         {
-            row.setRow("X,X,X,X,X,X,X,X");
+            row.setRow();
             row.setGameBoard(gameBoard);
-            gameBoard.getRowList().add(row);
+            gameBoard.getRows().add(row);
 
             row = new Row();
         }
@@ -236,53 +233,56 @@ public class OthelloControllerTest {
 
         this.mockMvc.perform(request)
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.rows[0].row", equalTo("X,X,X,X,X,X,X,X")));;
+                .andExpect(jsonPath("$.rows[0].row[0]", equalTo("X")))
+                .andExpect(jsonPath("$.rows[1].row[7]", equalTo("X")))
+                .andExpect(jsonPath("$.rows[7].row[7]", equalTo("X")));
+
     }
 
-    @Test
-    @Transactional
-    @Rollback
-    public void testGetGameBoards() throws Exception {
-
-        userRepository.save(user);
-        GameBoard gameBoard = new GameBoard();
-
-        gameBoard.setUser(user);
-
-        Row row = new Row();
-
-        for (int i =0;i<8;i++)
-        {
-            row.setRow("X,X,X,X,X,X,X,X");
-            row.setGameBoard(gameBoard);
-            gameBoard.getRowList().add(row);
-
-            row = new Row();
-        }
-
-        GameBoard gameBoard1 = new GameBoard();
-
-        gameBoard1.setUser(user);
-
-        for (int i =0;i<8;i++)
-        {
-            row.setRow("X,X,X,X,X,X,X,X");
-            row.setGameBoard(gameBoard);
-            gameBoard.getRowList().add(row);
-
-            row = new Row();
-        }
-
-        gameBoardRepository.save(gameBoard);
-        gameBoardRepository.save(gameBoard1);
-
-        MockHttpServletRequestBuilder request = get( "/" + user.getId() + "/games/" )
-                .contentType(MediaType.APPLICATION_JSON);
-
-        this.mockMvc.perform(request)
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)));;
-    }
+    // @Test
+    // @Transactional
+    // @Rollback
+    // public void testGetGameBoards() throws Exception {
+    //
+    //     userRepository.save(user);
+    //     GameBoard gameBoard = new GameBoard();
+    //
+    //     gameBoard.setUser(user);
+    //
+    //     Row row = new Row();
+    //
+    //     for (int i =0;i<8;i++)
+    //     {
+    //         row.initRow();
+    //         row.setGameBoard(gameBoard);
+    //         gameBoard.getRowList().add(row);
+    //
+    //         row = new Row();
+    //     }
+    //
+    //     GameBoard gameBoard1 = new GameBoard();
+    //
+    //     gameBoard1.setUser(user);
+    //
+    //     for (int i =0;i<8;i++)
+    //     {
+    //         row.initRow();
+    //         row.setGameBoard(gameBoard);
+    //         gameBoard.getRowList().add(row);
+    //
+    //         row = new Row();
+    //     }
+    //
+    //     gameBoardRepository.save(gameBoard);
+    //     gameBoardRepository.save(gameBoard1);
+    //
+    //     MockHttpServletRequestBuilder request = get( "/" + user.getId() + "/games/" )
+    //             .contentType(MediaType.APPLICATION_JSON);
+    //
+    //     this.mockMvc.perform(request)
+    //             .andExpect(status().isOk())
+    //             .andExpect(jsonPath("$", hasSize(2)));;
+    // }
 
 //    @Test
 //    @Transactional

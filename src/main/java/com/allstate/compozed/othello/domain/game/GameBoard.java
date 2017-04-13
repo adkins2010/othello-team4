@@ -58,11 +58,11 @@ public class GameBoard {
         this.user = user;
     }
 
-    public List<Row> getRowList() {
-        return rowList;
-    }
-
-    public void setRowList(List<Row> rowList) {
-        this.rowList = rowList;
-    }
+    // public List<Row> getRowList() {
+    //     return rowList;
+    // }
+    //
+    // public void setRowList(List<Row> rowList) {
+    //     this.rowList = rowList;
+    // }
 }
